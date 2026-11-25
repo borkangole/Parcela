@@ -1,0 +1,6 @@
+# Keep line endings consistent between Windows and the Linux server.
+* text=auto eol=lf
+*.ico binary
+*.png binary
+*.jpg binary
+*.pdf binary

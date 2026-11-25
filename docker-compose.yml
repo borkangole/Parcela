@@ -1,0 +1,19 @@
+# Local development database. Production runs PostgreSQL on the DigitalOcean server (via Coolify).
+# Start:  docker compose up -d
+# Stop:   docker compose down        (data is kept in the "pgdata" volume)
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    container_name: parcela-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: parcela
+      POSTGRES_PASSWORD: parcela
+      POSTGRES_DB: parcela
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
