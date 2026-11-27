@@ -1,28 +1,21 @@
 "use client";
 
-// The intro on the login page: the nine lots of the P drop in (the cherry lot last),
+// The intro on the login page: the six plots of the logo drop in (the cherry lot last),
 // "PARCELA" rises letter by letter, then the whole logo glides into its real place
 // in the page while the black screen fades away, and crossfades into the real logo.
 //
 // Plays once per browser session, on a full page load only. Click or any key skips it.
 // Skipped entirely for visitors who ask their device to reduce motion.
 import { useEffect, useRef } from "react";
+import { PLOTS } from "@/components/brand/logo";
 
 const STORAGE_KEY = "parcela-intro-seen";
 const EXIT_AT = 1650; // ms after page load when the logo starts moving to its place
 const EXIT_MS = 750;
 
-// Order the lots are placed in: the stem from the bottom up, then the bowl, the sold lot last.
-// [column, row] on the 3 x 4 grid, same geometry as <ParcelaMark>.
-const ORDER: [number, number][] = [
-  [0, 3], [0, 2], [0, 1], [0, 0],
-  [1, 0], [2, 1], [2, 2], [1, 2],
-  [2, 0], // the cherry lot
-];
-const UNIT = 8.4;
-const STEP = UNIT + 1.6;
-const OX = (40 - (3 * UNIT + 2 * 1.6)) / 2;
-const OY = (40 - (4 * UNIT + 3 * 1.6)) / 2;
+// The plots land in this order (indexes into PLOTS): the big left plot first,
+// then around the plan, the cherry (sold) plot last.
+const ORDER = [2, 0, 1, 3, 4, 5];
 
 // Runs before the page is painted (server HTML only), so there is never a flash of the
 // page before the intro, and the intro never shows when it shouldn't.
@@ -111,17 +104,20 @@ export function LogoIntro() {
         <div className="logo-intro-stage">
           <div ref={lockupRef} className="logo-intro-lockup">
             <svg viewBox="0 0 40 40" className="logo-intro-mark">
-              {ORDER.map(([c, r], i) => (
-                <rect
-                  key={`${c}-${r}`}
-                  x={OX + c * STEP}
-                  y={OY + r * STEP}
-                  width={UNIT}
-                  height={UNIT}
-                  className={i === ORDER.length - 1 ? "intro-lot intro-lot-sold" : "intro-lot"}
-                  style={{ "--i": i } as React.CSSProperties}
-                />
-              ))}
+              {ORDER.map((plot, i) => {
+                const [x, y, w, h] = PLOTS[plot];
+                return (
+                  <rect
+                    key={plot}
+                    x={x}
+                    y={y}
+                    width={w}
+                    height={h}
+                    className={i === ORDER.length - 1 ? "intro-lot intro-lot-sold" : "intro-lot"}
+                    style={{ "--i": i } as React.CSSProperties}
+                  />
+                );
+              })}
             </svg>
             <span className="logo-intro-word">
               {"PARCELA".split("").map((ch, i) => (

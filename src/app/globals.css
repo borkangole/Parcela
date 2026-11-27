@@ -288,7 +288,7 @@ html[data-intro="landing"] .logo-intro {
   transform-box: fill-box;
   transform-origin: center;
   animation: intro-lot 460ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  animation-delay: calc(140ms + var(--i) * 62ms);
+  animation-delay: calc(140ms + var(--i) * 95ms);
 }
 /* …and the cherry lot lands last, with a small settle. */
 .intro-lot-sold {

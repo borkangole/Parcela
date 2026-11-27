@@ -1,23 +1,18 @@
-// The Parcela logo: a "P" built from nine square lots, like blocks on a site plan.
-// The top-right lot is cherry red: the lot that's sold.
+// The Parcela logo, "The plot": a subdivision plan seen from above, six plots of
+// different sizes separated by thin roads. One plot is cherry red: the lot that's sold.
 import { cn } from "@/lib/utils";
 
-const UNIT = 8.4; // size of one lot
-const GAP = 1.6; // the road between lots
-const STEP = UNIT + GAP;
-const OFFSET_X = (40 - (3 * UNIT + 2 * GAP)) / 2;
-const OFFSET_Y = (40 - (4 * UNIT + 3 * GAP)) / 2;
-
-// [column, row] of each lot in the P (3 columns x 4 rows)
-const LOTS: [number, number][] = [
-  [0, 0], [1, 0], [2, 0],
-  [0, 1], [2, 1],
-  [0, 2], [1, 2], [2, 2],
-  [0, 3],
+/** The plots on a 40 x 40 grid: [x, y, width, height]. The last one is the sold (cherry) plot. */
+export const PLOTS: [number, number, number, number][] = [
+  [0, 0, 18, 11],
+  [20, 0, 20, 11],
+  [0, 13, 11, 27],
+  [13, 13, 13, 13],
+  [13, 28, 27, 12],
+  [28, 13, 12, 13], // sold
 ];
-const SOLD: [number, number] = [2, 0];
 
-/** The mark alone. Takes the text colour (currentColor); the sold lot is always cherry. */
+/** The mark alone. Takes the text colour (currentColor); the sold plot is always cherry. */
 export function ParcelaMark({ className, title }: { className?: string; title?: string }) {
   return (
     <svg
@@ -27,19 +22,16 @@ export function ParcelaMark({ className, title }: { className?: string; title?: 
       aria-hidden={title ? undefined : true}
       aria-label={title}
     >
-      {LOTS.map(([c, r]) => {
-        const sold = c === SOLD[0] && r === SOLD[1];
-        return (
-          <rect
-            key={`${c}-${r}`}
-            x={OFFSET_X + c * STEP}
-            y={OFFSET_Y + r * STEP}
-            width={UNIT}
-            height={UNIT}
-            className={sold ? "fill-cherry" : "fill-current"}
-          />
-        );
-      })}
+      {PLOTS.map(([x, y, w, h], i) => (
+        <rect
+          key={i}
+          x={x}
+          y={y}
+          width={w}
+          height={h}
+          className={i === PLOTS.length - 1 ? "fill-cherry" : "fill-current"}
+        />
+      ))}
     </svg>
   );
 }
