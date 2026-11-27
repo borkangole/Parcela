@@ -35,9 +35,11 @@ Real estate management system for **AAAC Corporation**, starting with the Costa 
 ```bash
 npm install
 cp .env.example .env          # Windows PowerShell: copy .env.example .env
-                              # then open .env and put in your PostgreSQL password
+                              # then open .env: put in your PostgreSQL password and a
+                              # BETTER_AUTH_SECRET (see the comment in .env)
 npm run db:migrate            # create the tables
 npm run db:seed               # load Costa Preciosa (39 lots)
+npm run create-admin -- "Your Name" you@example.com "a-strong-password"   # first login
 npx shadcn@latest init        # one time: set up shadcn/ui (pick the defaults)
 npm run dev                   # http://localhost:3000
 ```
@@ -55,6 +57,7 @@ The home page should show **Costa Preciosa: 37 available, 2 unavailable** (lots 
 | `npm run db:migrate` | Apply migrations to the database |
 | `npm run db:seed` | Load the Costa Preciosa lots (safe to run again) |
 | `npm run db:studio` | Browse the database in your browser |
+| `npm run create-admin -- "Name" email "password"` | Create an Admin account (the first one, or any time) |
 
 ## Folder structure
 
@@ -74,6 +77,14 @@ src/
 If you'd rather not use an installed PostgreSQL, `docker-compose.yml` runs one in Docker:
 `npm run db:up` to start, `npm run db:down` to stop, and use
 `DATABASE_URL="postgresql://parcela:parcela@localhost:5432/parcela"` in `.env`.
+
+## Login and roles
+
+- Two roles: **Admin** (everything) and **Agent** (lots, their own inquiries, buyers and sales).
+  The rules live in `src/lib/permissions.ts`; more roles can be added there later.
+- Nobody signs themselves up. Admins create every account.
+- `src/proxy.ts` sends anyone not logged in to `/login`. Every page still checks access itself with
+  `requireUser()` or `requirePermission({ ... })` from `src/lib/session.ts`.
 
 ## Changing the database
 

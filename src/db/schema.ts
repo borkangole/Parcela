@@ -5,7 +5,7 @@
 //   so do money math with integers (centavos) or a decimal library, not JS floats.
 // - Financial records are never deleted. Payments are voided, contracts are cancelled.
 // - Installment status (Paid / Partial / Due / Past Due) is computed from payments, not stored.
-// - Login tables (users, sessions) are added in the authentication step.
+// - Login tables (users, sessions, accounts) live in auth-schema.ts and are re-exported here.
 import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
 import {
@@ -20,6 +20,9 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { user } from "./auth-schema";
+
+export * from "./auth-schema";
 
 const id = () => text("id").primaryKey().$defaultFn(() => createId());
 const money = (name: string) => numeric(name, { precision: 14, scale: 2 });
@@ -95,6 +98,10 @@ export const lots = pgTable(
 
 export const agents = pgTable("agents", {
   id: id(),
+  // The agent's login account. Empty until an admin creates a login for this agent.
+  userId: text("user_id")
+    .unique()
+    .references(() => user.id),
   fullName: text("full_name").notNull(),
   phone: text("phone"),
   email: text("email").unique(),
@@ -353,7 +360,8 @@ export const lotsRelations = relations(lots, ({ one, many }) => ({
   inquiries: many(inquiries),
 }));
 
-export const agentsRelations = relations(agents, ({ many }) => ({
+export const agentsRelations = relations(agents, ({ one, many }) => ({
+  user: one(user, { fields: [agents.userId], references: [user.id] }),
   inquiries: many(inquiries),
   contracts: many(contracts),
   commissions: many(commissions),

@@ -1,0 +1,6 @@
+// Every login request (sign in, sign out, get session, admin user actions)
+// goes through /api/auth/* and is handled by Better Auth.
+import { toNextJsHandler } from "better-auth/next-js";
+import { auth } from "@/lib/auth";
+
+export const { GET, POST } = toNextJsHandler(auth);

@@ -3,21 +3,40 @@ import { connection } from "next/server";
 import { count, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { lots, projects } from "@/db/schema";
+import { ParcelaLogo } from "@/components/brand/logo";
+import { SignOutButton } from "@/components/sign-out-button";
+import { ROLE_LABELS, type RoleName } from "@/lib/permissions";
+import { requireUser } from "@/lib/session";
 
-// Temporary home page: confirms the app can read the database.
-// Replaced by the admin dashboard once login and the app shell are built.
+// Temporary home page: confirms login and the database work.
+// Replaced by the admin dashboard in Step 3 (admin layout).
 export default function Home() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-6 py-16">
-      <header>
-        <p className="text-sm font-medium text-neutral-500">AAAC Corporation</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Parcela</h1>
-        <p className="mt-2 text-neutral-600">Real estate management system</p>
+      <header className="flex items-center justify-between gap-4 border-b border-border pb-6">
+        <ParcelaLogo className="text-[13px] text-ink" markClassName="size-8" />
+        <Suspense fallback={<div className="h-9" />}>
+          <SignedInAs />
+        </Suspense>
       </header>
-      <Suspense fallback={<p className="text-neutral-500">Loading lots…</p>}>
+      <Suspense fallback={<p className="text-grey">Loading lots…</p>}>
         <LotSummary />
       </Suspense>
     </main>
+  );
+}
+
+async function SignedInAs() {
+  const user = await requireUser();
+  const role = ROLE_LABELS[user.role as RoleName] ?? user.role;
+  return (
+    <div className="flex items-center gap-4">
+      <div className="text-right text-sm leading-tight">
+        <p className="font-medium text-ink">{user.name}</p>
+        <p className="text-grey">{role}</p>
+      </div>
+      <SignOutButton />
+    </div>
   );
 }
 
@@ -50,7 +69,7 @@ async function LotSummary() {
 
   if (!project) {
     return (
-      <p className="rounded-lg border p-4 text-neutral-600">
+      <p className="rounded-lg border p-4 text-grey">
         Database is connected but empty. Run <code>npm run db:seed</code>.
       </p>
     );
@@ -62,7 +81,7 @@ async function LotSummary() {
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {STATUSES.map((s) => (
           <div key={s} className="rounded-lg border p-4">
-            <dt className="text-xs font-medium tracking-wide text-neutral-500">{s}</dt>
+            <dt className="text-xs font-medium tracking-wide text-grey">{s}</dt>
             <dd className="mt-1 text-2xl font-semibold">{counts[s] ?? 0}</dd>
           </div>
         ))}

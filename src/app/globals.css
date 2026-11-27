@@ -6,10 +6,17 @@
 
 @theme inline {
   --color-background: var(--background);
+  --color-cherry: var(--cherry);
+  --color-cherry-bright: var(--cherry-bright);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-grey: var(--grey);
+  --color-silver: var(--silver);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-geist-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -53,72 +60,82 @@ body {
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Parcela palette: the client's blacks, greys and white, with one cherry-red accent. */
+  --ink: #0b0b0b;
+  --ink-2: #1a1a1a;
+  --ink-3: #333333;
+  --grey: #6b6b6b;
+  --silver: #d9d9d9;
+  --paper: #ffffff;
+  --cherry: #c8102e;
+  --cherry-bright: #e0314a; /* cherry on dark grounds, for contrast */
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: #f3f3f3;
+  --secondary-foreground: var(--ink);
+  --muted: #f3f3f3;
+  --muted-foreground: var(--grey);
+  --accent: #f3f3f3;
+  --accent-foreground: var(--ink);
+  --destructive: var(--cherry);
+  --border: var(--silver);
+  --input: var(--silver);
+  --ring: var(--cherry);
+  --chart-1: var(--ink);
+  --chart-2: var(--ink-3);
+  --chart-3: var(--grey);
+  --chart-4: var(--silver);
+  --chart-5: var(--cherry);
+  --radius: 0.375rem;
+  --sidebar: var(--ink);
+  --sidebar-foreground: var(--paper);
+  --sidebar-primary: var(--cherry);
+  --sidebar-primary-foreground: var(--paper);
+  --sidebar-accent: var(--ink-2);
+  --sidebar-accent-foreground: var(--paper);
+  --sidebar-border: var(--ink-3);
+  --sidebar-ring: var(--cherry);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: var(--ink);
+  --foreground: var(--paper);
+  --card: var(--ink-2);
+  --card-foreground: var(--paper);
+  --popover: var(--ink-2);
+  --popover-foreground: var(--paper);
+  --primary: var(--paper);
+  --primary-foreground: var(--ink);
+  --secondary: var(--ink-2);
+  --secondary-foreground: var(--paper);
+  --muted: var(--ink-2);
+  --muted-foreground: #8f8f8f;
+  --accent: var(--ink-3);
+  --accent-foreground: var(--paper);
+  --destructive: var(--cherry-bright);
+  --border: var(--ink-3);
+  --input: var(--ink-3);
+  --ring: var(--cherry-bright);
+  --chart-1: var(--paper);
+  --chart-2: var(--silver);
+  --chart-3: var(--grey);
+  --chart-4: var(--ink-3);
+  --chart-5: var(--cherry-bright);
+  --sidebar: var(--ink);
+  --sidebar-foreground: var(--paper);
+  --sidebar-primary: var(--cherry-bright);
+  --sidebar-primary-foreground: var(--paper);
+  --sidebar-accent: var(--ink-2);
+  --sidebar-accent-foreground: var(--paper);
+  --sidebar-border: var(--ink-3);
+  --sidebar-ring: var(--cherry-bright);
 }
 
 @layer base {
@@ -130,5 +147,68 @@ body {
   }
   html {
     @apply font-sans;
+  }
+}
+/* ───────────── Login screen ───────────── */
+
+/* Page entrance: each block rises in once, staggered by its animation-delay. */
+.login-enter {
+  animation: login-rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Site plan lots appear one after another, like a plan being drawn. */
+.site-lot {
+  animation: lot-in 500ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Heading and error message swap when Admin/Agent changes or sign-in fails. */
+.login-swap {
+  animation: login-swap 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Taller inputs with a cherry focus line. */
+.login-input {
+  height: 3rem;
+  border-radius: 0.375rem;
+  padding-inline: 0.875rem;
+  font-size: 16px; /* 16px or more stops iPhones from zooming in on focus */
+  transition:
+    border-color 150ms,
+    box-shadow 150ms;
+}
+.login-input:hover:not(:focus-visible) {
+  border-color: var(--grey);
+}
+.login-input:focus-visible {
+  border-color: var(--ink);
+  box-shadow: 0 2px 0 0 var(--cherry);
+}
+
+@keyframes login-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes lot-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@keyframes login-swap {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-enter,
+  .site-lot,
+  .login-swap {
+    animation: none;
   }
 }

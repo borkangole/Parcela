@@ -4,39 +4,8 @@
 import "dotenv/config";
 import { sql } from "drizzle-orm";
 import { db } from "./index";
+import { BLOCKS, PROJECT } from "../data/costa-preciosa";
 import { blocks, lots, projects } from "./schema";
-
-const PROJECT = { name: "Costa Preciosa", grossArea: "11490.000" };
-
-// Saleable lots by block: [letter, area in sq.m.]
-const BLOCKS: Record<string, { area: string; lots: [string, number][] }> = {
-  "1": {
-    area: "1053.000",
-    lots: [["A", 137], ["B", 132], ["C", 120], ["D", 120], ["E", 200], ["F", 180], ["G", 164]],
-  },
-  "2A": {
-    area: "1171.000",
-    lots: [
-      ["H", 146], ["I", 150], ["J", 150], ["K", 125], ["L", 100],
-      ["M", 100], ["N", 100], ["O", 100], ["P", 100], ["Q", 100],
-    ],
-  },
-  "2B": {
-    area: "860.000",
-    lots: [
-      ["R", 100], ["S", 80], ["T", 80], ["U", 200], ["V", 80],
-      ["W", 80], ["X", 80], ["Y", 80], ["Z", 80],
-    ],
-  },
-  "3": {
-    area: "674.000",
-    lots: [["AA", 110], ["BB", 110], ["CC", 150], ["DD", 100], ["EE", 100], ["FF", 104]],
-  },
-  "4": {
-    area: "802.000",
-    lots: [["GG", 120], ["HH", 120], ["II", 100], ["JJ", 100], ["KK", 101], ["LL", 101], ["MM", 160]],
-  },
-};
 
 // Lots P and Q are crossed out on the plan. Keep them off sale until the owner confirms.
 const ON_HOLD_NOTE = "Crossed out on the area breakdown. Confirm with the owner before selling.";
@@ -63,7 +32,7 @@ async function main() {
 
   const lotRows: (typeof lots.$inferInsert)[] = [];
 
-  for (const [blockName, { area, lots: blockLots }] of Object.entries(BLOCKS)) {
+  for (const { name: blockName, area, lots: blockLots } of BLOCKS) {
     const [block] = await db
       .insert(blocks)
       .values({ projectId: project.id, name: blockName, area })
