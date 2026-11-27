@@ -7,7 +7,7 @@
 // - Installment status (Paid / Partial / Due / Past Due) is computed from payments, not stored.
 // - Login tables (users, sessions) are added in the authentication step.
 import { createId } from "@paralleldrive/cuid2";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -78,6 +78,8 @@ export const lots = pgTable(
     area: sqm("area").notNull(),
     pricePerSqm: money("price_per_sqm"),
     totalPrice: money("total_price"),
+    titleNo: text("title_no"), // TCT number of this lot's title, if separately titled
+    taxDeclarationNo: text("tax_declaration_no"),
     geometry: jsonb("geometry"), // GeoJSON polygon for the lot map (Phase 2)
     notes: text("notes"),
     createdAt: createdAt(),
@@ -96,7 +98,8 @@ export const agents = pgTable("agents", {
   fullName: text("full_name").notNull(),
   phone: text("phone"),
   email: text("email").unique(),
-  commissionRate: percent("commission_rate").notNull().default("0"), // e.g. 5.00 = 5%
+  // This agent's own rate, e.g. 5.00 = 5%. Leave empty to use the commission rule's rate.
+  commissionRate: percent("commission_rate"),
   active: boolean("active").notNull().default(true),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
@@ -139,6 +142,18 @@ export const inquiries = pgTable(
 // RESERVED = reservation fee paid · ACTIVE = paying installments · COMPLETED = fully paid
 export const contractStatus = pgEnum("contract_status", ["RESERVED", "ACTIVE", "COMPLETED", "CANCELLED"]);
 
+// Who shoulders a tax or fee. Empty (null) = not agreed yet.
+export const taxParty = pgEnum("tax_party", ["SELLER", "BUYER", "SHARED"]);
+
+// Closing steps after full payment, in order.
+export const titleTransferStatus = pgEnum("title_transfer_status", [
+  "NOT_STARTED",
+  "DEED_SIGNED", // Deed of Absolute Sale signed and notarized
+  "TAXES_PAID", // CGT/DST paid, BIR issued the CAR/eCAR, transfer tax paid
+  "SUBMITTED_TO_REGISTRY", // documents filed with the Registry of Deeds
+  "TRANSFERRED", // new title issued in the buyer's name
+]);
+
 export const contracts = pgTable(
   "contracts",
   {
@@ -160,13 +175,40 @@ export const contracts = pgTable(
     penaltyRate: percent("penalty_rate").notNull().default("0"), // % per month late
     monthlyAmortization: money("monthly_amortization").notNull().default("0"),
     reservedAt: timestamp("reserved_at", { withTimezone: true }).notNull().defaultNow(),
+    reservationExpiresAt: timestamp("reservation_expires_at", { withTimezone: true }),
     startDate: timestamp("start_date", { withTimezone: true }),
+
+    // Taxes and fees: who pays, as agreed in the contract
+    cgtPaidBy: taxParty("cgt_paid_by"), // Capital Gains Tax
+    dstPaidBy: taxParty("dst_paid_by"), // Documentary Stamp Tax
+    transferTaxPaidBy: taxParty("transfer_tax_paid_by"),
+    registrationFeesPaidBy: taxParty("registration_fees_paid_by"),
+
+    // Closing and title transfer (after full payment)
+    titleTransferStatus: titleTransferStatus("title_transfer_status").notNull().default("NOT_STARTED"),
+    deedSignedAt: timestamp("deed_signed_at", { withTimezone: true }),
+    titleTransferredAt: timestamp("title_transferred_at", { withTimezone: true }),
+    newTitleNo: text("new_title_no"), // title number issued in the buyer's name
+
+    // Cancellation is always a manual, approved step, never automatic.
+    // Installment buyers are protected by the Maceda Law (RA 6552): grace periods and,
+    // after 2+ years of payments, a refund (cash surrender value) of part of what they paid.
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    cancelledById: text("cancelled_by_id"), // user who approved it (linked after auth is added)
     cancelReason: text("cancel_reason"),
+    refundAmount: money("refund_amount"),
+
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index("contracts_status_idx").on(t.status)],
+  (t) => [
+    index("contracts_status_idx").on(t.status),
+    // A lot can have only one contract that isn't cancelled. The database itself refuses a
+    // second reservation, even if two people click "Reserve" on the same lot at the same time.
+    uniqueIndex("contracts_one_open_per_lot")
+      .on(t.lotId)
+      .where(sql`${t.status} <> 'CANCELLED'`),
+  ],
 );
 
 // ─────────────────────────── Accounting ───────────────────────────
@@ -204,14 +246,52 @@ export const payments = pgTable(
     referenceNo: text("reference_no"),
     paidAt: timestamp("paid_at", { withTimezone: true }).notNull(),
     notes: text("notes"),
-    voidedAt: timestamp("voided_at", { withTimezone: true }), // never delete a payment; void it
+    recordedById: text("recorded_by_id"), // user who entered it (linked after auth is added)
+
+    // A payment counts toward the buyer's balance only after accounting verifies it.
+    // Unverified = verifiedAt is empty.
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    verifiedById: text("verified_by_id"),
+
+    // Never delete a payment; void it (with a reason) so the history stays complete.
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
+    voidedById: text("voided_by_id"),
     voidReason: text("void_reason"),
     createdAt: createdAt(),
   },
   (t) => [index("payments_contract_paid_at_idx").on(t.contractId, t.paidAt)],
 );
 
-export const commissionStatus = pgEnum("commission_status", ["PENDING", "PAID", "CANCELLED"]);
+// What the commission percentage is applied to.
+export const commissionBasis = pgEnum("commission_basis", [
+  "CONTRACT_PRICE", // % of the selling price
+  "AMOUNT_COLLECTED", // % of what the buyer has actually paid so far
+]);
+
+// When the agent becomes entitled to the commission.
+export const commissionTrigger = pgEnum("commission_trigger", [
+  "ON_RESERVATION",
+  "ON_DOWN_PAYMENT",
+  "ON_PERCENT_PAID", // after the buyer has paid triggerPercent of the price
+  "ON_FULL_PAYMENT",
+]);
+
+// The company's commission policy, set by the owner instead of hard-coded in the app.
+export const commissionRules = pgTable("commission_rules", {
+  id: id(),
+  name: text("name").notNull().unique(), // "Standard"
+  rate: percent("rate").notNull(), // e.g. 3.00 = 3%
+  basis: commissionBasis("basis").notNull().default("CONTRACT_PRICE"),
+  trigger: commissionTrigger("trigger").notNull().default("ON_DOWN_PAYMENT"),
+  triggerPercent: percent("trigger_percent"), // only for ON_PERCENT_PAID
+  isDefault: boolean("is_default").notNull().default(false),
+  active: boolean("active").notNull().default(true),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+// PENDING = sale made, conditions not met yet · ELIGIBLE = earned, ready to pay · PAID
+export const commissionStatus = pgEnum("commission_status", ["PENDING", "ELIGIBLE", "PAID", "CANCELLED"]);
 
 export const commissions = pgTable("commissions", {
   id: id(),
@@ -221,9 +301,16 @@ export const commissions = pgTable("commissions", {
   agentId: text("agent_id")
     .notNull()
     .references(() => agents.id),
+  ruleId: text("rule_id").references(() => commissionRules.id),
+  // Copied from the rule when the sale is made, so a later policy change
+  // doesn't change commissions on deals that already happened.
+  rate: percent("rate").notNull(),
+  basis: commissionBasis("basis").notNull(),
   amount: money("amount").notNull(),
   status: commissionStatus("status").notNull().default("PENDING"),
+  eligibleAt: timestamp("eligible_at", { withTimezone: true }),
   paidAt: timestamp("paid_at", { withTimezone: true }),
+  paymentReference: text("payment_reference"),
   createdAt: createdAt(),
 });
 
@@ -298,7 +385,12 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
   contract: one(contracts, { fields: [payments.contractId], references: [contracts.id] }),
 }));
 
+export const commissionRulesRelations = relations(commissionRules, ({ many }) => ({
+  commissions: many(commissions),
+}));
+
 export const commissionsRelations = relations(commissions, ({ one }) => ({
   contract: one(contracts, { fields: [commissions.contractId], references: [contracts.id] }),
   agent: one(agents, { fields: [commissions.agentId], references: [agents.id] }),
+  rule: one(commissionRules, { fields: [commissions.ruleId], references: [commissionRules.id] }),
 }));
