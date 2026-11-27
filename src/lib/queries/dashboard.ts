@@ -114,3 +114,57 @@ export async function getDueThisWeek(limit = 6) {
   `);
   return result.rows.map((r) => ({ ...r, amount_due: Number(r.amount_due), due_date: new Date(r.due_date) }));
 }
+
+export type MonthPoint = { month: string; sales: number; contracts: number; collected: number; scheduled: number };
+
+/**
+ * The last 12 months (Philippine time), oldest first, every month present even when zero:
+ * - sales / contracts: value and number of contracts signed that month (not cancelled)
+ * - collected:         verified, non-voided payments received that month
+ * - scheduled:         installments that fell due that month
+ */
+export async function getMonthlyTrend(): Promise<MonthPoint[]> {
+  const result = await db.execute<{
+    month: string;
+    sales: string;
+    contracts: string;
+    collected: string;
+    scheduled: string;
+  }>(sql`
+    with months as (
+      select generate_series(
+        date_trunc('month', now() at time zone 'Asia/Manila') - interval '11 months',
+        date_trunc('month', now() at time zone 'Asia/Manila'),
+        interval '1 month'
+      ) as m
+    ),
+    s as (
+      select date_trunc('month', reserved_at at time zone 'Asia/Manila') as m, sum(total_price) as v, count(*) as n
+      from contracts where status <> 'CANCELLED' group by 1
+    ),
+    c as (
+      select date_trunc('month', p.paid_at at time zone 'Asia/Manila') as m, sum(p.amount) as v
+      from payments p join contracts k on k.id = p.contract_id and k.status <> 'CANCELLED'
+      where p.verified_at is not null and p.voided_at is null group by 1
+    ),
+    d as (
+      select date_trunc('month', i.due_date at time zone 'Asia/Manila') as m, sum(i.amount_due) as v
+      from installments i join contracts k on k.id = i.contract_id and k.status <> 'CANCELLED' group by 1
+    )
+    select to_char(months.m, 'YYYY-MM') as month,
+           coalesce(s.v, 0) as sales, coalesce(s.n, 0) as contracts,
+           coalesce(c.v, 0) as collected, coalesce(d.v, 0) as scheduled
+    from months
+    left join s on s.m = months.m
+    left join c on c.m = months.m
+    left join d on d.m = months.m
+    order by months.m
+  `);
+  return result.rows.map((r) => ({
+    month: r.month,
+    sales: Number(r.sales),
+    contracts: Number(r.contracts),
+    collected: Number(r.collected),
+    scheduled: Number(r.scheduled),
+  }));
+}

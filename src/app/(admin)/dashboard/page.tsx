@@ -4,12 +4,13 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PageTitle } from "@/components/app/page-header";
-import { LotBoard } from "@/components/lots/lot-board";
+import { CollectionsLineChart, SalesBarChart } from "@/components/charts/trend-charts";
+import { SiteMap } from "@/components/lots/site-map";
 import { STATUS_LABEL, StatusSwatch } from "@/components/lots/lot-status";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatLongDate, formatNumber, formatPeso, formatShortDate } from "@/lib/format";
 import { type LotStatus } from "@/components/lots/lot-status";
-import { getDueThisWeek, getLedger, getProjectLots } from "@/lib/queries/dashboard";
+import { getDueThisWeek, getLedger, getMonthlyTrend, getProjectLots } from "@/lib/queries/dashboard";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Dashboard | Parcela" };
@@ -26,7 +27,12 @@ const ORDER: LotStatus[] = ["SOLD", "RESERVED", "AVAILABLE", "UNAVAILABLE"];
 
 async function Dashboard() {
   await connection();
-  const [inventory, ledger, due] = await Promise.all([getProjectLots(), getLedger(), getDueThisWeek()]);
+  const [inventory, ledger, due, trend] = await Promise.all([
+    getProjectLots(),
+    getLedger(),
+    getDueThisWeek(),
+    getMonthlyTrend(),
+  ]);
 
   if (!inventory) {
     return (
@@ -42,6 +48,8 @@ async function Dashboard() {
   const onHold = inventory.lots.filter((l) => l.status === "UNAVAILABLE");
   const sold = counts.SOLD;
   const soldShare = total ? Math.round((sold / total) * 100) : 0;
+  const salesYear = trend.reduce((n, m) => n + m.sales, 0);
+  const collectedYear = trend.reduce((n, m) => n + m.collected, 0);
   const collectedShare = ledger.contractSales ? Math.round((ledger.collected / ledger.contractSales) * 100) : 0;
 
   return (
@@ -51,9 +59,9 @@ async function Dashboard() {
       </PageTitle>
 
       {/* Row 1: the plan, and the inventory it adds up to */}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <Panel
-          title="Site plan"
+          title="Site map"
           aside={
             <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-grey">
               {ORDER.map((s) => (
@@ -65,7 +73,7 @@ async function Dashboard() {
             </ul>
           }
         >
-          <LotBoard lots={inventory.lots} />
+          <SiteMap lots={inventory.lots} />
         </Panel>
 
         <Panel title="Inventory">
@@ -111,7 +119,7 @@ async function Dashboard() {
       </div>
 
       {/* Row 2: the money ledger */}
-      <section aria-label="Money" className="grid overflow-hidden rounded-lg border border-border/80 bg-card sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="Money" className="grid grid-cols-1 overflow-hidden rounded-lg border border-border/80 bg-card sm:grid-cols-2 lg:grid-cols-4">
         <Figure label="Contract sales" value={formatPeso(ledger.contractSales)}>
           {ledger.contracts === 0 ? "No contracts yet" : `${ledger.contracts} active ${ledger.contracts === 1 ? "contract" : "contracts"}`}
         </Figure>
@@ -128,8 +136,24 @@ async function Dashboard() {
         </Figure>
       </section>
 
-      {/* Row 3: what needs doing */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* Row 3: trends over the last 12 months */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Panel
+          title="Sales per month"
+          aside={<span className="text-[13px] text-grey tabular-nums">{formatPeso(salesYear)} in 12 months</span>}
+        >
+          <SalesBarChart data={trend} />
+        </Panel>
+        <Panel
+          title="Collections"
+          aside={<span className="text-[13px] text-grey tabular-nums">{formatPeso(collectedYear)} collected in 12 months</span>}
+        >
+          <CollectionsLineChart data={trend} />
+        </Panel>
+      </div>
+
+      {/* Row 4: what needs doing */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Panel title="Due in the next 7 days" aside={<PanelLink href="/payments">Payments</PanelLink>}>
           {due.length === 0 ? (
             <Empty>No installments fall due this week.</Empty>
@@ -195,7 +219,7 @@ async function Dashboard() {
 
 function Panel({ title, aside, children }: { title: string; aside?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-border/80 bg-card p-6">
+    <section className="min-w-0 rounded-lg border border-border/80 bg-card p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[14px] font-semibold text-ink">{title}</h2>
         {aside}
@@ -250,7 +274,7 @@ function DashboardSkeleton() {
         <Skeleton className="h-3 w-24" />
         <Skeleton className="h-8 w-64" />
       </div>
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <Skeleton className="h-[420px] rounded-lg" />
         <Skeleton className="h-[420px] rounded-lg" />
       </div>
