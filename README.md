@@ -34,9 +34,7 @@ Real estate management system for **AAAC Corporation**, starting with the Costa 
 
 ```bash
 npm install
-cp .env.example .env          # Windows PowerShell: copy .env.example .env
-                              # then open .env: put in your PostgreSQL password and a
-                              # BETTER_AUTH_SECRET (see the comment in .env)
+# create a file named .env (see "Settings (.env)" below)
 npm run db:migrate            # create the tables
 npm run db:seed               # load Costa Preciosa (39 lots)
 npm run create-admin -- "Your Name" you@example.com "a-strong-password"   # first login
@@ -45,6 +43,25 @@ npm run dev                   # http://localhost:3000
 ```
 
 The home page should show **Costa Preciosa: 37 available, 2 unavailable** (lots P and Q are on hold).
+
+## Settings (.env)
+
+The app reads its settings from a file named `.env` in the project folder. It holds passwords and
+keys, so it is never committed (`.gitignore` blocks every `.env*` file). Create it with these lines:
+
+```
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/parcela"
+BETTER_AUTH_SECRET="a-long-random-secret"
+BETTER_AUTH_URL="http://localhost:3000"
+NEXT_PUBLIC_ARCGIS_API_KEY="your-esri-api-key"
+```
+
+| Setting | What it is |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection: `postgresql://USER:PASSWORD@HOST:PORT/DATABASE` |
+| `BETTER_AUTH_SECRET` | Signs login sessions. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. Use a different one on the server |
+| `BETTER_AUTH_URL` | The address the app runs at (`http://localhost:3000` locally, `https://parcela.ph` on the server) |
+| `NEXT_PUBLIC_ARCGIS_API_KEY` | Esri ArcGIS key for the satellite map. Basemaps privilege only, restricted to `localhost:3000` and `parcela.ph`. Expires after a year: replace it before then |
 
 ## Scripts
 
