@@ -25,7 +25,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
             className="login-enter font-mono text-[11px] tracking-[0.24em] text-grey uppercase"
             style={{ animationDelay: "120ms" }}
           >
-            Site plan
+            Site map
           </p>
           <h2
             className="login-enter mt-3 mb-10 text-[2.5rem] leading-none font-semibold tracking-[-0.02em] 2xl:text-[3.25rem]"
