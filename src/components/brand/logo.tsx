@@ -44,10 +44,18 @@ export function ParcelaMark({ className, title }: { className?: string; title?: 
   );
 }
 
-/** Mark + wordmark. */
-export function ParcelaLogo({ className, markClassName }: { className?: string; markClassName?: string }) {
+/** Mark + wordmark. `introTarget` marks it as the spot the login intro's logo lands on. */
+export function ParcelaLogo({
+  className,
+  markClassName,
+  introTarget,
+}: {
+  className?: string;
+  markClassName?: string;
+  introTarget?: boolean;
+}) {
   return (
-    <span className={cn("inline-flex items-center gap-3", className)}>
+    <span className={cn("inline-flex items-center gap-3", className)} data-intro-target={introTarget || undefined}>
       <ParcelaMark className={markClassName} />
       <span className="text-[0.95em] font-semibold tracking-[0.32em] uppercase">
         Parcela

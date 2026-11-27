@@ -212,3 +212,184 @@ body {
     animation: none;
   }
 }
+
+/* ───────────── Logo intro (login page) ─────────────
+   html[data-intro] is set before first paint by LogoIntro:
+   "play" → intro running · "leaving" → logo gliding into place ·
+   "landing" → crossfading into the real logo · "done" / "skip" → page only. */
+
+.logo-intro {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+}
+html[data-intro="play"] .logo-intro,
+html[data-intro="leaving"] .logo-intro,
+html[data-intro="landing"] .logo-intro {
+  display: block;
+}
+html[data-intro="leaving"] .logo-intro,
+html[data-intro="landing"] .logo-intro {
+  pointer-events: none;
+}
+.logo-intro-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+}
+.logo-intro-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* The intro logo is the real logo at K times its size, so it can shrink exactly onto it.
+   Base sizes match <ParcelaLogo> on the login page: 13px / 32px mark on phones,
+   15px / 36px mark from the lg breakpoint; the gap is 12px (gap-3). */
+.logo-intro-lockup {
+  --fs: 13px;
+  --mk: 32px;
+  --k: 2.1;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(12px * var(--k));
+  font-size: calc(var(--fs) * var(--k));
+  color: var(--paper);
+  transform-origin: top left;
+  will-change: transform;
+}
+@media (min-width: 1024px) {
+  .logo-intro-lockup {
+    --fs: 15px;
+    --mk: 36px;
+    --k: 2.6;
+  }
+}
+.logo-intro-mark {
+  width: calc(var(--mk) * var(--k));
+  height: calc(var(--mk) * var(--k));
+  flex-shrink: 0;
+}
+.logo-intro-word {
+  font-size: 0.95em;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  white-space: nowrap;
+}
+
+/* The nine lots drop into place one after another… */
+.intro-lot {
+  fill: currentColor;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: intro-lot 460ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: calc(140ms + var(--i) * 62ms);
+}
+/* …and the cherry lot lands last, with a small settle. */
+.intro-lot-sold {
+  fill: var(--cherry);
+  animation-name: intro-lot-sold;
+  animation-duration: 640ms;
+}
+/* Then PARCELA rises in, letter by letter. */
+.intro-letter {
+  display: inline-block;
+  opacity: 0;
+  animation: intro-letter 560ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: calc(760ms + var(--i) * 45ms);
+}
+
+@keyframes intro-lot {
+  from {
+    opacity: 0;
+    transform: translateY(-35%) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes intro-lot-sold {
+  0% {
+    opacity: 0;
+    transform: translateY(-140%) scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(6%) scale(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes intro-letter {
+  from {
+    opacity: 0;
+    transform: translateY(45%);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* While the intro plays: hide the real logo (the intro logo lands on it) and hold the
+   page's own entrance until the intro starts leaving. */
+[data-intro-target] {
+  transition: opacity 220ms ease-out;
+}
+html[data-intro="play"] [data-intro-target],
+html[data-intro="leaving"] [data-intro-target] {
+  opacity: 0;
+}
+html[data-intro="play"] .login-enter,
+html[data-intro="play"] .site-lot {
+  animation-play-state: paused;
+}
+
+/* ───────────── Admin ───────────── */
+
+/* Hatched fill for lots on hold (swatches and bars). */
+.lot-hatch {
+  background: repeating-linear-gradient(45deg, #f3f3f3 0 2px, var(--silver) 2px 3px);
+}
+
+/* Sidebar: a thin cherry marker beside the page you're on. */
+.nav-link {
+  position: relative;
+}
+.nav-link[data-active]::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--cherry);
+}
+.nav-link[data-active] svg {
+  color: var(--cherry-bright);
+}
+
+/* Dashboard content settles in once. */
+.dash-enter > * {
+  animation: login-rise 520ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.dash-enter > *:nth-child(2) { animation-delay: 40ms; }
+.dash-enter > *:nth-child(3) { animation-delay: 80ms; }
+.dash-enter > *:nth-child(4) { animation-delay: 120ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-enter > * {
+    animation: none;
+  }
+}

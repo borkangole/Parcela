@@ -14,6 +14,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      // The login intro sets data-intro on <html> before React loads.
+      suppressHydrationWarning
       className={cn("h-full", "antialiased", GeistSans.variable, GeistMono.variable, "font-sans")}
     >
       <body className="min-h-full flex flex-col">
